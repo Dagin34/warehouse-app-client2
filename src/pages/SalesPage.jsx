@@ -33,6 +33,10 @@ export default function SalesPage() {
   const [sales, setSales] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
+// Remove duplicates for datalists
+const uniqueNames = [...new Set(sales.map((s) => s.customerName).filter(Boolean))];
+const uniqueTins = [...new Set(sales.map((s) => s.tinNumber).filter(Boolean))];
+const uniqueContacts = [...new Set(sales.map((s) => s.contact).filter(Boolean))];
 
   const messageRef = useRef(null);
 
@@ -60,12 +64,22 @@ export default function SalesPage() {
 
   // Fetch sales
   useEffect(() => {
-    const q = query(collection(db, "sales"), orderBy("timestamp", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setSales(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    });
-    return () => unsubscribe();
-  }, []);
+  const q = query(collection(db, "sales"), orderBy("timestamp", "desc"));
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const allSales = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    setSales(allSales);
+
+    // Collect unique previous entries
+    const names = [...new Set(allSales.map((s) => s.customerName).filter(Boolean))];
+    const tins = [...new Set(allSales.map((s) => s.tinNumber).filter(Boolean))];
+    const contacts = [...new Set(allSales.map((s) => s.contact).filter(Boolean))];
+
+    setUniqueNames(names);
+    setUniqueTins(tins);
+    setUniqueContacts(contacts);
+  });
+  return () => unsubscribe();
+}, []);
 
   // Scroll message into view
   useEffect(() => {
@@ -250,37 +264,65 @@ export default function SalesPage() {
                   Total
                   <input type="number" value={total} readOnly />
                 </label>
+<label>
+  Customer Name
+  <input
+    type="text"
+    list="customerNames"
+    placeholder="Customer Name"
+    value={customerName}
+    onChange={(e) => {
+      const value = e.target.value;
+      setCustomerName(value);
 
-                <label>
-                  Customer Name
-                  <input
-                    type="text"
-                    placeholder="Customer Name"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                  />
-                </label>
+      // Auto-fill TIN and contact if customer already exists
+      const previous = sales.find(
+        (s) => s.customerName.toLowerCase() === value.toLowerCase()
+      );
+      if (previous) {
+        setTinNumber(previous.tinNumber || "");
+        setContact(previous.contact || "");
+      }
+    }}
+  />
+  <datalist id="customerNames">
+    {uniqueNames.map((name, i) => (
+      <option key={i} value={name} />
+    ))}
+  </datalist>
+</label>
 
-                <label>
-                  TIN Number
-                  <input
-                    type="text"
-                    placeholder="TIN Number"
-                    value={tinNumber}
-                    onChange={(e) => setTinNumber(e.target.value)}
-                  />
-                </label>
+<label>
+  TIN Number
+  <input
+    type="text"
+    list="tinNumbers"
+    placeholder="TIN Number"
+    value={tinNumber}
+    onChange={(e) => setTinNumber(e.target.value)}
+  />
+  <datalist id="tinNumbers">
+    {uniqueTins.map((tin, i) => (
+      <option key={i} value={tin} />
+    ))}
+  </datalist>
+</label>
 
-                <label>
-                  Contact Info
-                  <input
-                    type="text"
-                    placeholder="Contact Info (optional)"
-                    value={contact}
-                    onChange={(e) => setContact(e.target.value)}
-                  />
-                </label>
-
+<label>
+  Contact Info
+  <input
+    type="text"
+    list="contactList"
+    placeholder="Contact Info (optional)"
+    value={contact}
+    onChange={(e) => setContact(e.target.value)}
+  />
+  <datalist id="contactList">
+    {uniqueContacts.map((c, i) => (
+      <option key={i} value={c} />
+    ))}
+  </datalist>
+</label>
                 <label>
                   Payment Status
                   <select
