@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { db } from "../utils/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import "../styles/SalesReport.css";
+import { formatNumber } from "../lib/utils";
 
 export default function SalesReport() {
   const [sales, setSales] = useState([]);
@@ -172,17 +173,17 @@ export default function SalesReport() {
       <div className="summary-row">
         <div className="summary-card cash">
           <h4>Cash Total</h4>
-          <p>${cashTotal}</p>
+          <p>${formatNumber(cashTotal)}</p>
         </div>
 
         <div className="summary-card transfer">
           <h4>Bank Transfer</h4>
-          <p>${transferTotal}</p>
+          <p>${formatNumber(transferTotal)}</p>
         </div>
 
         <div className="summary-card total">
           <h4>Grand Total</h4>
-          <p>${grandTotal}</p>
+          <p>${formatNumber(grandTotal)}</p>
         </div>
       </div>
 
@@ -239,7 +240,7 @@ export default function SalesReport() {
                   <td>{sale.timestamp.toLocaleDateString()}</td>
                   <td>{sale.customerName || "—"}</td>
                   <td>{sale.paymentMethod}</td>
-                  <td>${sale.total}</td>
+                  <td>${formatNumber(sale.total)}</td>
                 </tr>
               ))
             ) : (
